@@ -16,14 +16,42 @@ import { hover } from "@/lib/hover";
 
 // assets
 import { productApi } from "@/services/product";
+import { transactionApi } from "@/services/transaction";
+import { useSession } from "next-auth/react";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function Products({ params }: { params: { id: string } }) {
+  const { data: session } = useSession();
   const router = useRouter();
   const [itemCount, setItemCount] = useState(1);
+  const { toast } = useToast();
 
   const { data: productDetails } = productApi.useGetOneProductQuery(params.id);
   const { data: recommendedProducts, isLoading: isRecommendedLoading } =
     productApi.useGetAllProductsQuery({});
+
+  const [mutateCheckout] = transactionApi.useCheckoutMutation();
+
+  const handleAddToCart = async () => {
+    if (!session?.user) {
+      toast({
+        title: "Please login first",
+        variant: "destructive",
+        duration: 2000,
+      });
+      router.push("/auth/signin");
+
+      return;
+    }
+
+    const data = {
+      product_id: params.id,
+      qty: itemCount,
+    };
+
+    await mutateCheckout(data);
+    router.push("/checkout");
+  };
 
   return (
     <main className="flex flex-col w-full min-h-screen items-center pb-8">
@@ -73,6 +101,7 @@ export default function Products({ params }: { params: { id: string } }) {
                 "py-1 px-4 bg-leaf text-white leading-4",
                 hover.shadow
               )}
+              onClick={handleAddToCart}
             >
               <IconCart className="w-5 h-5 mr-2" />
               Masukkan Keranjang
@@ -82,9 +111,7 @@ export default function Products({ params }: { params: { id: string } }) {
                 "py-1 px-4 bg-carrot text-white leading-4",
                 hover.shadow
               )}
-              onClick={() => {
-                router.push("/checkout");
-              }}
+              onClick={handleAddToCart}
             >
               <IconBag className="w-5 h-5 mr-2" />
               Beli Sekarang
