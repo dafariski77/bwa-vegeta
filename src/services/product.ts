@@ -9,6 +9,10 @@ interface ProductResponse extends BaseResponse {
   };
 }
 
+interface ProductDetailResponse extends BaseResponse {
+  data: Product;
+}
+
 interface ProductApiParams {
   page?: string | undefined;
   category?: string | undefined;
@@ -34,6 +38,11 @@ export const productApi = createApi({
           max_price: params.max_price || undefined,
           rating: params.rating || undefined,
         },
+      }),
+    }),
+    getOneProduct: builder.query<ProductDetailResponse, string>({
+      query: (id) => ({
+        url: `/${id}`,
       }),
     }),
   }),
